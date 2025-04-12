@@ -190,12 +190,49 @@ void setup() {
 }
 
 void loop() {
+  static unsigned long spotlights_last_update = millis();
+  int spotlight_idx = 0;
+  twinkle spotlights = {.spotlights={1, 0, 0, 0, 0, 0, 0, 0}};
+
+  if (millis() - spotlights_last_update > 1000) {
+    spotlight_idx = spotlight_idx == 7 ? 0 : spotlight_idx + 1;
+    spotlights.spotlights = {0, 0, 0, 0, 0, 0, 0, 0};
+    switch (spotlight_idx) {
+      case 0:
+      spotlights.spotlights.lamp0 = 1;
+      break;
+      case 1:
+      spotlights.spotlights.lamp1 = 1;
+      break;
+      case 2:
+      spotlights.spotlights.lamp2 = 1;
+      break;
+      case 3:
+      spotlights.spotlights.lamp3 = 1;
+      break;
+      case 4:
+      spotlights.spotlights.lamp4 = 1;
+      break;
+      case 5:
+      spotlights.spotlights.lamp5 = 1;
+      break;
+      case 6:
+      spotlights.spotlights.lamp6 = 1;
+      break;
+      case 7:
+      spotlights.spotlights.lamp7 = 1;
+      break;
+    }
+  }
+
   button_input.raw = transfer(INPUT_BUTTONS, 0xff);
   turntable_p1 = transfer(INPUT_TT_P1, 0xff);
   turntable_p2 = transfer(INPUT_TT_P2, 0xff);
   slider_1_2.raw = transfer(INPUT_VOL_1_2, 0xff);
   slider_3_4.raw = transfer(INPUT_VOL_3_4, 0xff);
   slider_5.raw = transfer(INPUT_VOL_5, 0xff);
+
+  transfer(OUTPUT_SPOTLIGHTS, spotlights.raw);
 
   text_update();
 }
