@@ -8,6 +8,16 @@
 #define TEXT_BUF 64
 #define TEXT_UPDATE_INTERVAL 2500
 
+#define SLEEP_INTERVAL 1000
+
+#define SLEEP_MSEC
+
+#ifdef SLEEP_MSEC
+#define SLEEP() delay(SLEEP_INTERVAL)
+#else
+#define SLEEP() delayMicroseconds(SLEEP_INTERVAL)
+#endif
+
 // TODO: Make sure the bitfield order is correct under AVR GCC
 
 typedef union twinkle {
@@ -107,15 +117,16 @@ bool send_address(uint8_t address) {
     digitalWrite(PIN_CLOCK, LOW);
     Serial.print((address >> i) & 1);
     digitalWrite(PIN_OUTPUT, (address >> i) & 1);
-    delayMicroseconds(1);
+    SLEEP();
     digitalWrite(PIN_CLOCK, HIGH);
-    delayMicroseconds(1);
+    SLEEP();
   }
 
   Serial.print("\nACK ");
   is_ack = !digitalRead(PIN_INPUT);
   Serial.println(is_ack);
   digitalWrite(PIN_CLOCK, LOW);
+  SLEEP();
   return is_ack;
 }
 
@@ -129,10 +140,10 @@ uint8_t exchange_data(uint8_t send_data) {
   for (i=7; i>=0; i--) {
     Serial.print((send_data >> i) & 1);
     digitalWrite(PIN_OUTPUT, (send_data >> i) & 1);
-    delayMicroseconds(1);
+    SLEEP();
     digitalWrite(PIN_CLOCK, HIGH);
     recv_data |= digitalRead(PIN_INPUT) << i;
-    delayMicroseconds(1);
+    SLEEP();
     digitalWrite(PIN_CLOCK, LOW);
   }
   SLEEP();
@@ -154,7 +165,7 @@ uint8_t transfer(uint8_t address, uint8_t send_data) {
   recv_data = exchange_data(send_data);
   digitalWrite(PIN_CLOCK, HIGH);
   digitalWrite(PIN_EN, HIGH);
-  delayMicroseconds(1);
+  SLEEP();
 
   return recv_data;
 }
