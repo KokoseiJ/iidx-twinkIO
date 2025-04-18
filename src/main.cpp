@@ -9,13 +9,20 @@
 #define TEXT_UPDATE_INTERVAL 1000
 
 #define SLEEP_INTERVAL 1
-
 // #define SLEEP_MSEC
 
 #ifdef SLEEP_MSEC
 #define SLEEP() delay(SLEEP_INTERVAL)
 #else
 #define SLEEP() delayMicroseconds(SLEEP_INTERVAL)
+#endif
+
+// #define ENABLE_LOG
+
+#ifdef ENABLE_LOG
+#define LOG(...) Serial.print(__VA_ARGS__)
+#else
+#define LOG(...) do {} while(0)
 #endif
 
 // TODO: Make sure the bitfield order is correct under AVR GCC
@@ -107,24 +114,25 @@ bool send_address(uint8_t address) {
 
   address |= 7;
 
-  Serial.print("send_address begin\n"
+  LOG("send_address begin\n"
                "DO ");
-  Serial.println(digitalRead(PIN_INPUT));
+  LOG(digitalRead(PIN_INPUT));
 
-  Serial.print("addr ");
+  LOG("\naddr ");
 
   for (i=7;i>=0; i--) {
     digitalWrite(PIN_CLOCK, LOW);
-    Serial.print((address >> i) & 1);
+    LOG((address >> i) & 1);
     digitalWrite(PIN_OUTPUT, (address >> i) & 1);
     SLEEP();
     digitalWrite(PIN_CLOCK, HIGH);
     SLEEP();
   }
 
-  Serial.print("\nACK ");
+  LOG("\nACK ");
   is_ack = !digitalRead(PIN_INPUT);
-  Serial.println(is_ack);
+  LOG(is_ack);
+  LOG("\n");
   return is_ack;
 }
 
@@ -134,12 +142,12 @@ uint8_t exchange_data(uint8_t send_data) {
 
   send_data = ~send_data;
 
-  Serial.print("exchange_data begin\n"
+  LOG("exchange_data begin\n"
                "Data Out ");
 
   for (i=7; i>=0; i--) {
     digitalWrite(PIN_CLOCK, LOW);
-    Serial.print((send_data >> i) & 1);
+    LOG((send_data >> i) & 1);
     digitalWrite(PIN_OUTPUT, (send_data >> i) & 1);
     SLEEP();
     digitalWrite(PIN_CLOCK, HIGH);
@@ -147,8 +155,9 @@ uint8_t exchange_data(uint8_t send_data) {
     SLEEP();
   }
 
-  Serial.print("\nData In ");
-  Serial.println(recv_data, BIN);
+  LOG("\nData In ");
+  LOG(recv_data, BIN);
+  LOG("\n");
 
   return recv_data;
 }
@@ -156,7 +165,7 @@ uint8_t exchange_data(uint8_t send_data) {
 uint8_t transfer(uint8_t address, uint8_t send_data) {
   uint8_t recv_data;
   
-  Serial.println("Transfer begin");
+  LOG("Transfer begin\n");
   
   digitalWrite(PIN_EN, LOW);
   send_address(address);
