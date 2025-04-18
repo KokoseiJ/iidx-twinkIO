@@ -6,11 +6,11 @@
 #define PIN_CLOCK 5
 
 #define TEXT_BUF 64
-#define TEXT_UPDATE_INTERVAL 2500
+#define TEXT_UPDATE_INTERVAL 1000
 
-#define SLEEP_INTERVAL 1000
+#define SLEEP_INTERVAL 1
 
-#define SLEEP_MSEC
+// #define SLEEP_MSEC
 
 #ifdef SLEEP_MSEC
 #define SLEEP() delay(SLEEP_INTERVAL)
@@ -125,8 +125,6 @@ bool send_address(uint8_t address) {
   Serial.print("\nACK ");
   is_ack = !digitalRead(PIN_INPUT);
   Serial.println(is_ack);
-  digitalWrite(PIN_CLOCK, LOW);
-  SLEEP();
   return is_ack;
 }
 
@@ -134,19 +132,20 @@ uint8_t exchange_data(uint8_t send_data) {
   uint8_t recv_data = 0;
   int i;
 
+  send_data = ~send_data;
+
   Serial.print("exchange_data begin\n"
                "Data Out ");
 
   for (i=7; i>=0; i--) {
+    digitalWrite(PIN_CLOCK, LOW);
     Serial.print((send_data >> i) & 1);
     digitalWrite(PIN_OUTPUT, (send_data >> i) & 1);
     SLEEP();
     digitalWrite(PIN_CLOCK, HIGH);
     recv_data |= digitalRead(PIN_INPUT) << i;
     SLEEP();
-    digitalWrite(PIN_CLOCK, LOW);
   }
-  SLEEP();
 
   Serial.print("\nData In ");
   Serial.println(recv_data, BIN);
@@ -160,10 +159,8 @@ uint8_t transfer(uint8_t address, uint8_t send_data) {
   Serial.println("Transfer begin");
   
   digitalWrite(PIN_EN, LOW);
-  digitalWrite(PIN_CLOCK, LOW);
   send_address(address);
   recv_data = exchange_data(send_data);
-  digitalWrite(PIN_CLOCK, HIGH);
   digitalWrite(PIN_EN, HIGH);
   SLEEP();
 
@@ -217,16 +214,19 @@ void setup() {
   strcpy(text_buffer, "HELLO - WORLD !");
   text_length = 15;
   text_index = 0;
+
+  delay(3000);
 }
 
 void loop() {
   static unsigned long spotlights_last_update = 0;
   static int spotlight_idx = 0;
-  static twinkle spotlights = {.spotlights={1, 0, 0, 0, 0, 0, 0, 0}};
+  static twinkle spotlights = {.spotlights={0, 0, 0, 1, 0, 0, 0, 0}};
 
   if (millis() - spotlights_last_update > 1000) {
+    spotlights_last_update = millis();
     spotlight_idx = spotlight_idx == 7 ? 0 : spotlight_idx + 1;
-    spotlights.spotlights = {0, 0, 0, 0, 0, 0, 0, 0};
+    spotlights.spotlights = {0,};
     switch (spotlight_idx) {
       case 0:
       spotlights.spotlights.lamp0 = 1;
@@ -263,6 +263,9 @@ void loop() {
   slider_5.raw = transfer(INPUT_VOL_5, 0xff);
 
   transfer(OUTPUT_SPOTLIGHTS, spotlights.raw);
+  transfer(OUTPUT_NEON, spotlight_idx % 2 ? 0 : (twinkle){.neon = {
+    .neon_on = 1, .filler = 0
+  }}.raw);
 
   text_update();
 }
