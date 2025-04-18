@@ -1,9 +1,9 @@
 #include <Arduino.h>
 
-#define PIN_CLOCK 2
+#define PIN_INPUT 2
 #define PIN_EN 3
 #define PIN_OUTPUT 4
-#define PIN_INPUT 5
+#define PIN_CLOCK 5
 
 #define TEXT_BUF 64
 #define TEXT_UPDATE_INTERVAL 2500
@@ -95,17 +95,26 @@ bool send_address(uint8_t address) {
   int i;
   bool is_ack = false;
 
-  address &= 7;
+  address |= 7;
+
+  Serial.print("send_address begin\n"
+               "DO ");
+  Serial.println(digitalRead(PIN_INPUT));
+
+  Serial.print("addr ");
 
   for (i=7;i>=0; i--) {
     digitalWrite(PIN_CLOCK, LOW);
+    Serial.print((address >> i) & 1);
     digitalWrite(PIN_OUTPUT, (address >> i) & 1);
     delayMicroseconds(1);
     digitalWrite(PIN_CLOCK, HIGH);
     delayMicroseconds(1);
   }
 
+  Serial.print("\nACK ");
   is_ack = !digitalRead(PIN_INPUT);
+  Serial.println(is_ack);
   digitalWrite(PIN_CLOCK, LOW);
   return is_ack;
 }
@@ -114,7 +123,11 @@ uint8_t exchange_data(uint8_t send_data) {
   uint8_t recv_data = 0;
   int i;
 
+  Serial.print("exchange_data begin\n"
+               "Data Out ");
+
   for (i=7; i>=0; i--) {
+    Serial.print((send_data >> i) & 1);
     digitalWrite(PIN_OUTPUT, (send_data >> i) & 1);
     delayMicroseconds(1);
     digitalWrite(PIN_CLOCK, HIGH);
@@ -122,12 +135,18 @@ uint8_t exchange_data(uint8_t send_data) {
     delayMicroseconds(1);
     digitalWrite(PIN_CLOCK, LOW);
   }
+  SLEEP();
+
+  Serial.print("\nData In ");
+  Serial.println(recv_data, BIN);
 
   return recv_data;
 }
 
 uint8_t transfer(uint8_t address, uint8_t send_data) {
   uint8_t recv_data;
+  
+  Serial.println("Transfer begin");
   
   digitalWrite(PIN_EN, LOW);
   digitalWrite(PIN_CLOCK, LOW);
@@ -145,14 +164,11 @@ void text_update() {
 
   int i;
 
-  if (millis() - text_last_update < TEXT_UPDATE_INTERVAL) {
-    return;
-  }
+  if (millis() - text_last_update >= TEXT_UPDATE_INTERVAL) {
   text_last_update = millis();
-
-  if (text_index == text_length) {
-    text_index == 0;
-    return;
+    if (++text_index == text_length) {
+      text_index = 0;
+    }
   }
 
   for (i=0; i<9; i++) {
@@ -166,6 +182,9 @@ void text_update() {
 void setup() {
   twinkle spotlights = {.spotlights={1, 1, 1, 1, 1, 1, 1, 1}};
   twinkle neon = {.neon={1, 0x7f}};
+
+  Serial.begin(9600);
+
   pinMode(PIN_CLOCK, OUTPUT);
   pinMode(PIN_EN, OUTPUT);
   pinMode(PIN_OUTPUT, OUTPUT);
@@ -190,9 +209,9 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long spotlights_last_update = millis();
-  int spotlight_idx = 0;
-  twinkle spotlights = {.spotlights={1, 0, 0, 0, 0, 0, 0, 0}};
+  static unsigned long spotlights_last_update = 0;
+  static int spotlight_idx = 0;
+  static twinkle spotlights = {.spotlights={1, 0, 0, 0, 0, 0, 0, 0}};
 
   if (millis() - spotlights_last_update > 1000) {
     spotlight_idx = spotlight_idx == 7 ? 0 : spotlight_idx + 1;
