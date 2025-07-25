@@ -14,15 +14,10 @@ This project is helpful if:
 ## How do I use it?
 ### Hardware
 You will need:
-* **Arduino** (or any compatible board)
+* **Arduino** (or any compatible board, preferably with 5v logic level and 3.3v power out)
+  * Some means to step down the VCC voltage to something lower if it doesn't have 3.3v out
 * **RJ-45 breakout board** (or DIN8 if your cab uses that)
-* **3 RS-422 modules** (you need 3 since the IO uses 3 TX line and 1 RX line)
-
-***What if I don't have / want to buy 3 RS-422 modules?***
-
-For TX line, you technically can get away with wiring the 5v digital output pin to A pin and 3.3v to B pin. **Do this at your own risk!**
-
-For RX line, you would most likely want to use RS-422 module.
+* Optionally, **RS-422 module** for receiving inputs
 
 ---
 
@@ -39,11 +34,14 @@ Wirings for the RJ-45 port is as follows:
 | 7 | Clock Output B | TX |
 | 8 | Clock Output A | TX |
 
-Wire each A-B / Y-Z pair to your RS-422 module of choice. A is wired to Y, and B to Z.
-
 If you have a newer cab that uses DIN8 instead, you may try the [conversion pinout written in arcade-docs](https://github.com/shizmob/arcade-docs/blob/main/konami/io/GEC02/pwb-aa.md) and adapt it to match the pinout. I haven't tested it myself, but if anyone ends up getting this to work, please report back!
 
-Now, wire TX/RX lines from RS-422 modules to arduino. The default pinout is as follows:
+`Data Input` pins may be ignored if you don't need to receive inputs from the board. If you do, then you need to connect them to an RS-422 module, and wire the output to `Data Input` pin on Arduino.
+
+**You will connect all 3 `B` pins to 3.3v** (or any voltage that is lower than what your Arduino HIGH voltage is, but higher than 0v).
+
+Now, each `A` pins will be wired directly to corresponding pins on Arduino. Default pinouts are as follows:
+
 | Arduino Pin | Description
 | :---: | :--- |
 | 2 | Data Input |
