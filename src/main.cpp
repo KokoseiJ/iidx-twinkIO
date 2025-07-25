@@ -1,15 +1,18 @@
 #include <Arduino.h>
+#include <FastLED.h>
 
 #define PIN_INPUT 2
 #define PIN_EN 3
 #define PIN_OUTPUT 4
 #define PIN_CLOCK 5
+#define PIN_P1 6
+#define PIN_P2 7
 
 #define TEXT_BUF 64
 #define TEXT_UPDATE_INTERVAL 1000
 
-#define SLEEP_INTERVAL 1
-// #define SLEEP_MSEC
+#define SLEEP_INTERVAL 1500
+#define SLEEP_MSEC
 
 #ifdef SLEEP_MSEC
 #define SLEEP() delay(SLEEP_INTERVAL)
@@ -17,7 +20,7 @@
 #define SLEEP() delayMicroseconds(SLEEP_INTERVAL)
 #endif
 
-// #define ENABLE_LOG
+#define ENABLE_LOG
 
 #ifdef ENABLE_LOG
 #define LOG(...) Serial.print(__VA_ARGS__)
@@ -196,9 +199,24 @@ void text_update() {
   }
 }
 
+CRGB p1led[50];
+CRGB p2led[50];
+
 void setup() {
-  twinkle spotlights = {.spotlights={1, 1, 1, 1, 1, 1, 1, 1}};
-  twinkle neon = {.neon={1, 0x7f}};
+  twinkle spotlights = {.spotlights={1, 0, 1, 0, 1, 0, 1, 0}};
+  twinkle neon = {.neon={0, 0}};
+
+  FastLED.addLeds<WS2812B, PIN_P1, GRB>(p1led, 50);
+  FastLED.addLeds<WS2812B, PIN_P2, GRB>(p2led, 50);
+
+  FastLED.setBrightness(0xFF/3);
+
+  for (int i=0; i<50; i++) {
+    p1led[i] = CRGB(255, 247, 0);
+    p2led[i] = CRGB(255, 247, 00);
+  }
+
+  FastLED.show();
 
   Serial.begin(9600);
 
@@ -220,11 +238,9 @@ void setup() {
     neon.raw
   );
 
-  strcpy(text_buffer, "HELLO - WORLD !");
-  text_length = 15;
+  strcpy(text_buffer, "ZENITH ARCADE");
+  text_length = 13;
   text_index = 0;
-
-  delay(3000);
 }
 
 void loop() {
@@ -232,37 +248,6 @@ void loop() {
   static int spotlight_idx = 0;
   static twinkle spotlights = {.spotlights={0, 0, 0, 1, 0, 0, 0, 0}};
 
-  if (millis() - spotlights_last_update > 1000) {
-    spotlights_last_update = millis();
-    spotlight_idx = spotlight_idx == 7 ? 0 : spotlight_idx + 1;
-    spotlights.spotlights = {0,};
-    switch (spotlight_idx) {
-      case 0:
-      spotlights.spotlights.lamp0 = 1;
-      break;
-      case 1:
-      spotlights.spotlights.lamp1 = 1;
-      break;
-      case 2:
-      spotlights.spotlights.lamp2 = 1;
-      break;
-      case 3:
-      spotlights.spotlights.lamp3 = 1;
-      break;
-      case 4:
-      spotlights.spotlights.lamp4 = 1;
-      break;
-      case 5:
-      spotlights.spotlights.lamp5 = 1;
-      break;
-      case 6:
-      spotlights.spotlights.lamp6 = 1;
-      break;
-      case 7:
-      spotlights.spotlights.lamp7 = 1;
-      break;
-    }
-  }
 
   button_input.raw = transfer(INPUT_BUTTONS, 0xff);
   turntable_p1 = transfer(INPUT_TT_P1, 0xff);
@@ -271,10 +256,9 @@ void loop() {
   slider_3_4.raw = transfer(INPUT_VOL_3_4, 0xff);
   slider_5.raw = transfer(INPUT_VOL_5, 0xff);
 
-  transfer(OUTPUT_SPOTLIGHTS, spotlights.raw);
-  transfer(OUTPUT_NEON, spotlight_idx % 2 ? 0 : (twinkle){.neon = {
-    .neon_on = 1, .filler = 0
-  }}.raw);
+  transfer(OUTPUT_SPOTLIGHTS, (twinkle){.spotlights={1, 1, 1, 1, 1, 1, 1, 1}}.raw);
+  transfer(OUTPUT_NEON, (twinkle){.neon={.neon_on=1}}.raw);
 
   text_update();
 }
+
