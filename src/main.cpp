@@ -11,7 +11,7 @@
 #define TEXT_BUF 64
 #define TEXT_UPDATE_INTERVAL 1000
 
-#define SLEEP_INTERVAL 1500
+#define SLEEP_INTERVAL 1
 #define SLEEP_MSEC
 
 #ifdef SLEEP_MSEC
@@ -20,7 +20,7 @@
 #define SLEEP() delayMicroseconds(SLEEP_INTERVAL)
 #endif
 
-#define ENABLE_LOG
+// #define ENABLE_LOG
 
 #ifdef ENABLE_LOG
 #define LOG(...) Serial.print(__VA_ARGS__)
@@ -215,9 +215,7 @@ void setup() {
     p1led[i] = CRGB(255, 247, 0);
     p2led[i] = CRGB(255, 247, 00);
   }
-
-  FastLED.show();
-
+    
   Serial.begin(9600);
 
   pinMode(PIN_CLOCK, OUTPUT);
@@ -244,21 +242,9 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long spotlights_last_update = 0;
-  static int spotlight_idx = 0;
-  static twinkle spotlights = {.spotlights={0, 0, 0, 1, 0, 0, 0, 0}};
-
-
-  button_input.raw = transfer(INPUT_BUTTONS, 0xff);
-  turntable_p1 = transfer(INPUT_TT_P1, 0xff);
-  turntable_p2 = transfer(INPUT_TT_P2, 0xff);
-  slider_1_2.raw = transfer(INPUT_VOL_1_2, 0xff);
-  slider_3_4.raw = transfer(INPUT_VOL_3_4, 0xff);
-  slider_5.raw = transfer(INPUT_VOL_5, 0xff);
-
   transfer(OUTPUT_SPOTLIGHTS, (twinkle){.spotlights={1, 1, 1, 1, 1, 1, 1, 1}}.raw);
   transfer(OUTPUT_NEON, (twinkle){.neon={.neon_on=1}}.raw);
 
-  text_update();
+  FastLED.show();
 }
 
